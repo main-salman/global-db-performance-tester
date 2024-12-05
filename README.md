@@ -27,10 +27,10 @@ A web application to test and measure database transaction speeds across differe
 ## Prerequisites
 
 - Node.js (v16 or later)
-- npm or yarn
+- npm
 - AWS Account with appropriate permissions
 - Terraform (v1.0 or later)
-- PostgreSQL client (optional, for direct database access)
+
 
 ## Installation
 
@@ -61,8 +61,8 @@ sudo apt-get update && sudo apt-get install terraform
 ### 2. Clone and Setup Application
 
 ```bash
-git clone https://github.com/yourusername/database-performance-lab.git
-cd database-performance-lab
+git clone https://github.com/main-salman/global-db-performance-tester.git
+cd global-db-performance-tester
 npm install
 ```
 
@@ -78,72 +78,31 @@ aws_secret_access_key = YOUR_SECRET_KEY
 
 ### 4. Deploy Infrastructure
 
+Update the Variables.tfvar file with your AWS Access Key ID and Secret Access Key. You can leave the other variables as is - those are for features not implemented yet.
+
+Also, install Terraform - this will work on Windows, Linux and Mac.
+
 ```bash
-cd terraform
-terraform init
-terraform plan
-terraform apply
+terraform init 
+terraform plan -var-file="variables.tfvars" -auto-approve
+terraform apply -var-file="variables.tfvars" -auto-approve
 ```
 
-### 5. Configure Environment Variables
-
-Create a `.env.local` file in the project root:
-
-```ini
-DATABASE_URL_US_EAST="postgresql://user:password@us-east-instance:5432/dbname"
-DATABASE_URL_EU_WEST="postgresql://user:password@eu-west-instance:5432/dbname"
-DATABASE_URL_AP_SOUTH="postgresql://user:password@ap-south-instance:5432/dbname"
-```
 
 ## Running the Application
-
-### Development Mode
 
 ```bash
 npm run dev
 ```
-
-The application will be available at `http://localhost:3000`
-
-### Production Mode
-
-```bash
-npm run build
-npm start
-```
-
-## Testing
-
-Run the test suite:
-
-```bash
-npm test
-```
-
-## Monitoring
-
-Access the AWS RDS console to monitor database metrics:
-- CPU Utilization
-- Database Connections
-- Free Storage Space
-- Read/Write IOPS
 
 ## Cleanup
 
 To destroy the infrastructure:
 
 ```bash
-cd terraform
-terraform destroy
+terraform destroy -var-file="variables.tfvars" -auto-approve
 ```
 
-## Contributing
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
 
 ## License
 

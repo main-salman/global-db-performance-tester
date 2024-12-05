@@ -2,21 +2,9 @@
 
 A web application to test and measure database transaction speeds across different global regions. The application allows users to upload files to different regional databases and measure the upload duration and performance metrics.
 
+<img width="1037" alt="image" src="https://github.com/user-attachments/assets/bef0852d-aa8f-458e-8c55-e60f01594ff4">
+
 ## Components
-
-### Frontend
-- Next.js React application with TypeScript
-- Tailwind CSS for styling with Apple-inspired design
-- Real-time performance metrics display
-- Interactive region selection
-- File upload progress tracking
-
-### Backend
-- Next.js API routes
-- PostgreSQL databases in multiple regions
-- AWS RDS instances for database hosting
-- File handling with formidable
-- Performance metrics collection
 
 ### Infrastructure
 - Terraform configurations for AWS resources
@@ -27,7 +15,6 @@ A web application to test and measure database transaction speeds across differe
 ## Prerequisites
 
 - Node.js (v16 or later)
-- npm
 - AWS Account with appropriate permissions
 - Terraform (v1.0 or later)
 
@@ -94,6 +81,8 @@ terraform apply -var-file="variables.tfvars" -auto-approve
 ```bash
 npm run dev
 ```
+
+In your browser, go to http://localhost:3000/ - and have fun using the application!
 
 ## Cleanup
 

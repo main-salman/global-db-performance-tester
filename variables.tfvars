@@ -1,6 +1,6 @@
 # AWS Authentication
-aws_access_key = ""    # Replace with your actual access key
-aws_secret_key = ""  # Replace with your actual secret key
+aws_access_key = "lkjlkj"    # Replace with your actual access key
+aws_secret_key = "lkjlkj"  # Replace with your actual secret key
 
 # Application configuration
 app_name    = "distributed-app"

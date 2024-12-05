@@ -1,49 +1,47 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { Pool } from 'pg';
 
+const getDbConfig = (region: string) => {
+  let hostString: string;
+  
+  switch (region) {
+    case 'us-west-1':
+      hostString = process.env.DB_HOST_US_WEST || '';
+      break;
+    case 'sa-east-1':
+      hostString = process.env.DB_HOST_SA_EAST || '';
+      break;
+    case 'ap-southeast-2':
+      hostString = process.env.DB_HOST_AP_SOUTHEAST || '';
+      break;
+    default:
+      throw new Error(`Invalid region: ${region}`);
+  }
+
+  if (!hostString) {
+    throw new Error(`No database host found for region: ${region}`);
+  }
+
+  // Split host and port
+  const [host, port] = hostString.split(':');
+
+  return {
+    host,
+    port: parseInt(port || '5432'),
+    database: 'distributed_app',
+    user: process.env.DB_USERNAME || 'dbadmin',
+    password: process.env.DB_PASSWORD,
+    ssl: {
+      rejectUnauthorized: false
+    },
+    connectionTimeoutMillis: 10000
+  };
+};
+
 const pools = {
-  'us-west-1': new Pool({
-    host: process.env.DB_HOST_US_WEST?.split(':')[0],
-    port: parseInt(process.env.DB_HOST_US_WEST?.split(':')[1] || '5432'),
-    database: 'distributed_app',
-    user: process.env.DB_USERNAME,
-    password: process.env.DB_PASSWORD,
-    ssl: {
-      rejectUnauthorized: false
-    },
-    connectionTimeoutMillis: 30000,
-    query_timeout: 30000,
-    statement_timeout: 30000,
-    idle_in_transaction_session_timeout: 30000
-  }),
-  'sa-east-1': new Pool({
-    host: process.env.DB_HOST_SA_EAST?.split(':')[0],
-    port: parseInt(process.env.DB_HOST_SA_EAST?.split(':')[1] || '5432'),
-    database: 'distributed_app',
-    user: process.env.DB_USERNAME,
-    password: process.env.DB_PASSWORD,
-    ssl: {
-      rejectUnauthorized: false
-    },
-    connectionTimeoutMillis: 30000,
-    query_timeout: 30000,
-    statement_timeout: 30000,
-    idle_in_transaction_session_timeout: 30000
-  }),
-  'ap-southeast-2': new Pool({
-    host: process.env.DB_HOST_AP_SOUTHEAST?.split(':')[0],
-    port: parseInt(process.env.DB_HOST_AP_SOUTHEAST?.split(':')[1] || '5432'),
-    database: 'distributed_app',
-    user: process.env.DB_USERNAME,
-    password: process.env.DB_PASSWORD,
-    ssl: {
-      rejectUnauthorized: false
-    },
-    connectionTimeoutMillis: 30000,
-    query_timeout: 30000,
-    statement_timeout: 30000,
-    idle_in_transaction_session_timeout: 30000
-  })
+  'us-west-1': new Pool(getDbConfig('us-west-1')),
+  'sa-east-1': new Pool(getDbConfig('sa-east-1')),
+  'ap-southeast-2': new Pool(getDbConfig('ap-southeast-2'))
 };
 
 const createTablesIfNotExist = async (pool: Pool) => {
@@ -83,15 +81,59 @@ const createTablesIfNotExist = async (pool: Pool) => {
 const fetchDatabaseFiles = async (pool: Pool, region: string) => {
   console.log(`Fetching files for region ${region}...`);
   const result = await pool.query(
-    `SELECT id, file_name, file_size, file_type, region, created_at, 
-      COALESCE(upload_duration_ms, 0) as upload_duration_ms 
+    `SELECT 
+      id, 
+      file_name, 
+      file_size, 
+      file_type, 
+      region, 
+      created_at, 
+      upload_duration_ms
      FROM uploaded_files 
      WHERE region = $1 
      ORDER BY created_at DESC`,
     [region]
   );
-  console.log(`Found ${result.rows.length} files, first file:`, result.rows[0]);
+  
+  if (result.rows.length > 0) {
+    console.log('Sample file data:', {
+      region,
+      fileName: result.rows[0].file_name,
+      size: result.rows[0].file_size,
+      duration: result.rows[0].upload_duration_ms,
+      speed: ((result.rows[0].file_size / (1024 * 1024)) / (result.rows[0].upload_duration_ms / 1000)).toFixed(2)
+    });
+  }
+  
   return result;
+};
+
+const testConnection = async (pool: Pool, region: string) => {
+  const config = getDbConfig(region);
+  try {
+    console.log(`Testing connection to ${region}...`, {
+      host: config.host,
+      port: config.port,
+      database: config.database,
+      user: config.user
+    });
+    
+    await pool.query('SELECT 1');
+    console.log(`Connection to ${region} successful`);
+    return true;
+  } catch (error) {
+    console.error(`Connection to ${region} failed:`, {
+      error,
+      config: {
+        host: config.host,
+        port: config.port,
+        database: config.database,
+        user: config.user
+      },
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
+    return false;
+  }
 };
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {

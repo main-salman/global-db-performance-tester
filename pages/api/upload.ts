@@ -10,12 +10,35 @@ export const config = {
   },
 };
 
-const pools = {
-  'us-west-1': new Pool({
-    host: process.env.DB_HOST_US_WEST?.split(':')[0],
-    port: 5432,
+const getDbConfig = (region: string) => {
+  let hostString: string;
+  
+  switch (region) {
+    case 'us-west-1':
+      hostString = process.env.DB_HOST_US_WEST || '';
+      break;
+    case 'sa-east-1':
+      hostString = process.env.DB_HOST_SA_EAST || '';
+      break;
+    case 'ap-southeast-2':
+      hostString = process.env.DB_HOST_AP_SOUTHEAST || '';
+      break;
+    default:
+      throw new Error(`Invalid region: ${region}`);
+  }
+
+  if (!hostString) {
+    throw new Error(`No database host found for region: ${region}`);
+  }
+
+  // Split host and port
+  const [host, port] = hostString.split(':');
+
+  return {
+    host,
+    port: parseInt(port || '5432'),
     database: 'distributed_app',
-    user: process.env.DB_USERNAME,
+    user: process.env.DB_USERNAME || 'dbadmin',
     password: process.env.DB_PASSWORD,
     ssl: {
       rejectUnauthorized: false
@@ -24,29 +47,13 @@ const pools = {
     statement_timeout: 30000,
     query_timeout: 30000,
     idle_in_transaction_session_timeout: 30000
-  }),
-  'sa-east-1': new Pool({
-    host: process.env.DB_HOST_SA_EAST?.split(':')[0],
-    port: 5432,
-    database: 'distributed_app',
-    user: process.env.DB_USERNAME,
-    password: process.env.DB_PASSWORD,
-    ssl: {
-      rejectUnauthorized: false
-    },
-    connectionTimeoutMillis: 10000,
-  }),
-  'ap-southeast-2': new Pool({
-    host: process.env.DB_HOST_AP_SOUTHEAST?.split(':')[0],
-    port: 5432,
-    database: 'distributed_app',
-    user: process.env.DB_USERNAME,
-    password: process.env.DB_PASSWORD,
-    ssl: {
-      rejectUnauthorized: false
-    },
-    connectionTimeoutMillis: 10000,
-  }),
+  };
+};
+
+const pools = {
+  'us-west-1': new Pool(getDbConfig('us-west-1')),
+  'sa-east-1': new Pool(getDbConfig('sa-east-1')),
+  'ap-southeast-2': new Pool(getDbConfig('ap-southeast-2'))
 };
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -91,6 +98,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const form = formidable({
       maxFileSize: 100 * 1024 * 1024,
     });
+
+    // Get the request start time from headers
+    const uploadStartTime = parseInt(req.headers['x-upload-start-time'] as string);
+    if (!uploadStartTime) {
+      return res.status(400).json({ message: 'Missing upload start time' });
+    }
 
     console.log('Parsing form data...');
     const [fields, files] = await form.parse(req);
@@ -148,37 +161,59 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           );
         `);
 
-        const startTime = Date.now();
-
         console.log('Reading file...');
         const fileData = await fs.promises.readFile(file.filepath);
         console.log(`File read successfully (${fileData.length} bytes)`);
+
+        // Calculate total duration after all operations are complete
+        const totalDuration = Date.now() - uploadStartTime;
+        console.log('Duration details:', {
+          uploadStartTime,
+          currentTime: Date.now(),
+          totalDuration,
+          fileSize: file.size,
+          speedMBps: (file.size / (1024 * 1024)) / (totalDuration / 1000)
+        });
+
+        console.log('Inserting file with duration:', {
+          fileName: file.originalFilename,
+          size: file.size,
+          duration: totalDuration
+        });
 
         console.log('Storing file in database...');
         const result = await client.query(
           `INSERT INTO uploaded_files (file_name, file_data, file_size, file_type, region, upload_duration_ms)
            VALUES ($1, $2, $3, $4, $5, $6)
-           RETURNING id;`,
+           RETURNING *;`,  // Changed to RETURNING * to get all columns
           [
             file.originalFilename || 'unnamed',
             fileData,
             file.size,
             file.mimetype || 'application/octet-stream',
             region,
-            Date.now() - startTime
+            totalDuration
           ]
         );
 
-        console.log('File stored successfully, ID:', result.rows[0].id);
-        const uploadDuration = Date.now() - startTime;
-        console.log(`Total upload duration: ${uploadDuration}ms`);
+        const insertedFile = result.rows[0];
+        console.log('File stored successfully:', {
+          id: insertedFile.id,
+          fileName: insertedFile.file_name,
+          duration: insertedFile.upload_duration_ms
+        });
         
         return res.status(200).json({
           success: true,
           message: 'File uploaded successfully',
-          fileId: result.rows[0].id,
+          fileId: insertedFile.id,
           region: region,
-          uploadDuration: uploadDuration
+          duration: totalDuration,
+          details: {
+            fileName: insertedFile.file_name,
+            fileSize: insertedFile.file_size,
+            uploadDuration: insertedFile.upload_duration_ms
+          }
         });
       } finally {
         client.release();

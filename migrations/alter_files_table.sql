@@ -1,0 +1,1 @@
+ALTER TABLE files ADD COLUMN IF NOT EXISTS upload_duration_ms INTEGER; 

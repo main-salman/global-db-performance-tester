@@ -51,25 +51,43 @@ export default function DistributedWebApp() {
     try {
       setIsUploading(true);
       setUploadProgress('Uploading...');
-      const startTime = Date.now();
+      
+      const uploadStartTime = Date.now();
+      console.log('Starting upload at:', uploadStartTime);
 
-      await axios.post('/api/upload', formData, {
+      const uploadResponse = await axios.post('/api/upload', formData, {
+        headers: {
+          'X-Upload-Start-Time': uploadStartTime.toString()
+        },
         onUploadProgress: (progressEvent) => {
           const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total!);
           setUploadProgress(`Uploading: ${percentCompleted}%`);
         }
       });
       
-      const endTime = Date.now();
-      setUploadTime(endTime - startTime);
-      const fileSizeMB = (selectedFile.size / (1024 * 1024)).toFixed(2);
-      setUploadProgress(`Upload complete! File (${fileSizeMB}MB) uploaded to ${selectedRegion}`);
+      const duration = uploadResponse.data.duration;
+      console.log('Upload response:', {
+        startTime: uploadStartTime,
+        endTime: Date.now(),
+        serverDuration: duration,
+        clientDuration: Date.now() - uploadStartTime
+      });
+
+      const fileSizeMB = selectedFile.size / (1024 * 1024);
+      const uploadSpeedMBps = (fileSizeMB / (duration / 1000)).toFixed(2);
       
-      // Refresh database statuses
-      fetchDatabaseStatuses();
+      setUploadTime(duration);
+      setUploadProgress(
+        `Upload complete! File (${fileSizeMB.toFixed(2)} MB) uploaded to ${selectedRegion} at ${uploadSpeedMBps} MB/s`
+      );
+      
+      await fetchDatabaseStatuses();
     } catch (error) {
       setUploadProgress('Upload failed');
-      console.error('Upload error:', error);
+      console.error('Upload error:', {
+        error,
+        response: error.response?.data
+      });
     } finally {
       setIsUploading(false);
     }
@@ -196,22 +214,33 @@ export default function DistributedWebApp() {
                     </tr>
                   </thead>
                   <tbody>
-                    {db.files.map((file) => (
-                      <tr key={file.id}>
-                        <td className="font-medium">{file.file_name}</td>
-                        <td>{(file.file_size / 1024 / 1024).toFixed(2)} MB</td>
-                        <td>{file.file_type}</td>
-                        <td>
-                          <span className="duration-badge">
-                            {file.upload_duration_ms} ms
-                          </span>
-                        </td>
-                        <td>
-                          {((file.file_size / 1024 / 1024) / (file.upload_duration_ms / 1000)).toFixed(2)} MB/s
-                        </td>
-                        <td>{new Date(file.created_at).toLocaleString()}</td>
-                      </tr>
-                    ))}
+                    {db.files.map((file) => {
+                      const fileSizeMB = file.file_size / (1024 * 1024);
+                      const durationSec = file.upload_duration_ms / 1000;
+                      const speedMBps = (fileSizeMB / durationSec).toFixed(2);
+                      
+                      console.log('File metrics:', {
+                        fileName: file.file_name,
+                        sizeMB: fileSizeMB.toFixed(2),
+                        durationMs: file.upload_duration_ms,
+                        speedMBps
+                      });
+
+                      return (
+                        <tr key={file.id}>
+                          <td className="font-medium">{file.file_name}</td>
+                          <td>{fileSizeMB.toFixed(2)} MB</td>
+                          <td>{file.file_type}</td>
+                          <td>
+                            <span className="duration-badge">
+                              {file.upload_duration_ms} ms
+                            </span>
+                          </td>
+                          <td>{speedMBps} MB/s</td>
+                          <td>{new Date(file.created_at).toLocaleString()}</td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>

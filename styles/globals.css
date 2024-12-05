@@ -1,0 +1,130 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Apple-inspired fonts */
+@font-face {
+  font-family: 'SF Pro Display';
+  src: url('https://applesocial.s3.amazonaws.com/assets/styles/fonts/sanfrancisco/sfprodisplay-regular-webfont.woff') format('woff');
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: 'SF Pro Display';
+  src: url('https://applesocial.s3.amazonaws.com/assets/styles/fonts/sanfrancisco/sfprodisplay-medium-webfont.woff') format('woff');
+  font-weight: 500;
+}
+
+@font-face {
+  font-family: 'SF Pro Display';
+  src: url('https://applesocial.s3.amazonaws.com/assets/styles/fonts/sanfrancisco/sfprodisplay-semibold-webfont.woff') format('woff');
+  font-weight: 600;
+}
+
+/* Base styles */
+@layer base {
+  html {
+    font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+/* Custom shadows */
+.shadow-apple {
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+}
+
+/* Custom transitions */
+.transition-apple {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Custom button styles */
+.button-apple {
+  @apply bg-[#0071e3] text-white font-medium px-6 py-2 rounded-full 
+         hover:bg-[#0077ED] transition-apple 
+         active:scale-[0.98] active:bg-[#006EDB]
+         text-[14px] leading-none;
+}
+
+/* Custom input styles */
+.input-apple {
+  @apply border border-[#d2d2d7] rounded-lg px-6 py-2 
+         focus:outline-none focus:border-[#0071e3] 
+         transition-apple bg-white
+         text-[14px] text-[#1d1d1f]
+         appearance-none;
+}
+
+/* Custom file input styles */
+.file-input-apple {
+  @apply block text-[14px] text-[#1d1d1f] w-auto cursor-pointer;
+}
+
+.file-input-apple::file-selector-button {
+  @apply mr-4 py-2 px-6 rounded-full border-0
+         text-[14px] font-medium
+         bg-[#0071e3] text-white
+         cursor-pointer
+         transition-all duration-300 ease-in-out;
+}
+
+.file-input-apple::file-selector-button:hover {
+  @apply bg-[#0077ED];
+}
+
+/* File card styles */
+.file-card {
+  @apply bg-[#f5f5f7] rounded-2xl p-6 
+         hover:bg-[#f0f0f0] transition-apple;
+}
+
+/* Upload duration badge */
+.duration-badge {
+  @apply inline-flex items-center px-2 py-1 rounded-full 
+         bg-[#0071e3] text-white text-[12px] font-medium;
+}
+
+/* Custom styles for file information display */
+.file-info {
+  @apply grid grid-cols-1 gap-2;
+}
+
+.file-info-item {
+  @apply flex flex-col;
+}
+
+.file-info-label {
+  @apply font-medium text-purple-700;
+}
+
+.file-info-value {
+  @apply text-purple-600;
+}
+
+/* Ensure upload duration is always visible */
+.upload-duration {
+  @apply block !important;
+  @apply text-sm text-purple-600 font-medium;
+}
+
+/* Table styles */
+.table-apple {
+  @apply w-full border-collapse;
+}
+
+.table-apple th {
+  @apply px-6 py-3 text-left text-[12px] font-medium text-[#86868b] uppercase tracking-wider
+         bg-[#f5f5f7] border-b border-[#d2d2d7];
+}
+
+.table-apple td {
+  @apply px-6 py-4 text-[14px] text-[#1d1d1f] border-b border-[#d2d2d7]
+         whitespace-nowrap;
+}
+
+.table-apple tr:hover {
+  @apply bg-[#f5f5f7] transition-apple;
+}
+ 

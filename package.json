@@ -1,0 +1,30 @@
+{
+  "name": "distributed-app",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "axios": "latest",
+    "formidable": "^3.5.2",
+    "next": "latest",
+    "pg": "^8.13.1",
+    "react": "latest",
+    "react-dom": "latest",
+    "styled-components": "^6.1.1"
+  },
+  "devDependencies": {
+    "@types/formidable": "^3.4.5",
+    "@types/node": "latest",
+    "@types/pg": "^8.11.10",
+    "@types/react": "^18.3.13",
+    "@types/react-dom": "^18.3.1",
+    "@types/styled-components": "^5.1.32",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.16",
+    "typescript": "latest"
+  }
+}
